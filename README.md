@@ -89,7 +89,22 @@ deletes it. Port 8012 is used so a Flare or other server on 8011 can coexist.
 
 ## Benchmark results
 
-See [`docs/RESULTS.md`](docs/RESULTS.md). `tests/summarize.py` renders every
+Measured 2026-10-26 on one GB10; 10/10 screens and 30/30 rounds passed.
+
+| Workload | Result |
+|---|---|
+| Decode, 1K in / 256 out, C1 | **6.59 tok/s** aggregate, 0.47 s TTFT |
+| Decode, C2 / C4 / C8 | 12.97 / 24.82 / **42.11 tok/s** |
+| Warm prefix reuse, C1 | 6.64 tok/s, TTFT 0.17 s, ≥90% reuse |
+| Prefill 16K / 32K | TTFT 22.8 s / 50.6 s (~650–720 tok/s) |
+| Retrieval 32K / 100K / 200K | 3/3 codes at every size; TTFT 50.5 s / 214 s / **625 s** |
+| KV capacity | 650,704–679,872 tokens (64.5–67.4 GiB) |
+
+Batch-1 decode is 82% of the ~8 tok/s bandwidth ceiling for 33 GiB of FP8
+weights. Batching amortizes the weight read (6.4× aggregate at C8) but does not
+improve per-stream latency. Long-context prefill is the practical limit: a 200K
+prompt takes 10.4 minutes to first token. Full tables, telemetry and caveats are
+in [`docs/RESULTS.md`](docs/RESULTS.md); `tests/summarize.py` renders every
 attempt in `evidence/`, including failures.
 
 ## Contents
