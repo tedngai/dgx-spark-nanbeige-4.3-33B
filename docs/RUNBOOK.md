@@ -24,7 +24,10 @@ start again.
    `/health`.
 
 Expected startup on a warm page cache is 3–6 minutes for 33 GiB of FP8 weights
-plus CUDA graph capture. The first start after a download can be slower.
+plus CUDA graph capture. Measured on 2026-10-26: weight load 3.1–3.8 minutes,
+engine init ~40 s, `/health` after ~4.5–5 minutes. The first start after a
+container recreation also runs `torch.compile`; that start reports a smaller KV
+pool (650,704 tokens) than later starts that reuse the AOT cache (679,872).
 
 ## Screens
 
@@ -70,6 +73,7 @@ the downloaded file hashes.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
+| `unrecognized arguments: --disable-log-requests` | vLLM 0.32 removed the flag | Use `--no-enable-log-requests` |
 | Container exits during startup | Memory plan too large or weights missing | `docker logs`, lower `GPU_MEMORY_UTILIZATION`, re-run `download-model.sh --verify` |
 | `ValueError: ... max_model_len` | Request longer than the served context | Keep prompt + output ≤ 262,144 tokens |
 | Tool calls arrive as plain text | Parser mismatch | The profile uses `qwen3_coder`; the template must use `tool_call_format="xml"` |
